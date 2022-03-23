@@ -1,13 +1,16 @@
 package tests;
 
+import helpers.CustomAllureListener;
 import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static helpers.CustomAllureListener.withCustomTemplates;
 import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
@@ -76,6 +79,8 @@ public class BookstoreTests {
     void generateTokenWithAllureListenerTest() {
         String data = "{ \"userName\": \"alex\"," +
                 " \"password\": \"asdsad#frew_DFS2\" }";
+
+//        RestAssured.filters(new AllureRestAssured()); подключаем Allure для всего проекта в @BeforeAll
         given()
                 .filter(new AllureRestAssured())
                 .contentType(JSON)
@@ -88,6 +93,29 @@ public class BookstoreTests {
                 .log().status()
                 .log().body()
                 .statusCode(200)
+                .body("status", is("Success"))
+                .body("result", is("User authorized successfully."))
+                .body("token.size()", greaterThan(0));
+    }
+
+    @Test
+    void generateTokenWithCustomAllureListenerTest() {
+        String data = "{ \"userName\": \"alex\"," +
+                " \"password\": \"asdsad#frew_DFS2\" }";
+
+        given()
+                .filter(withCustomTemplates())
+                .contentType(JSON)
+                .body(data)
+                .log().uri()
+                .log().body()
+                .when()
+                .post("/Account/v1/GenerateToken")
+                .then()
+                .log().status()
+                .log().body()
+                .statusCode(200)
+                .body(matchesJsonSchemaInClasspath("schemas/generateToken_response_schema.json"))
                 .body("status", is("Success"))
                 .body("result", is("User authorized successfully."))
                 .body("token.size()", greaterThan(0));
