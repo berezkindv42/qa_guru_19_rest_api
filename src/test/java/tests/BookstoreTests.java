@@ -1,13 +1,8 @@
 package tests;
 
-import helpers.CustomAllureListener;
-import io.qameta.allure.restassured.AllureRestAssured;
-import io.restassured.RestAssured;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import static helpers.CustomAllureListener.withCustomTemplates;
-import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
@@ -16,101 +11,35 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 
 
-public class BookstoreTests {
+public class BookstoreTests extends TestBase {
 
-    @BeforeAll
-    static void setup() {
-        RestAssured.baseURI = "https://demoqa.com";
-
-    }
+    TestData testData = new TestData();
 
     @Test
-    void getBooksTest() {
-        get("/BookStore/v1/Books")
-                .then()
-                .body("books", hasSize(greaterThan(0)));
-    }
-
-    @Test
-    void getBooksWithAllLogsTest() {
-        given()
-                .log().all()
-                .when()
-                .get("/BookStore/v1/Books")
-                .then()
-                .log().all()
-                .body("books", hasSize(greaterThan(0)));
-    }
-
-    @Test
-    void getBooksWithSomeLogsTest() {
+    @Tag("bookstoretests")
+    void bookListTest() {
         given()
                 .log().uri()
-                .log().body()
                 .when()
-                .get("/BookStore/v1/Books")
+                .get(testData.bookListUrl)
                 .then()
                 .log().status()
                 .log().body()
+                .statusCode(200)
+                .body(matchesJsonSchemaInClasspath("schemas/bookList_response_schema.json"))
                 .body("books", hasSize(greaterThan(0)));
     }
 
     @Test
+    @Tag("bookstoretests")
     void generateTokenTest() {
-        String data = "{ \"userName\": \"alex\"," +
-                " \"password\": \"asdsad#frew_DFS2\" }";
         given()
                 .contentType(JSON)
-                .body(data)
+                .body(testData.userLogin)
                 .log().uri()
                 .log().body()
                 .when()
-                .post("/Account/v1/GenerateToken")
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(200)
-                .body("status", is("Success"))
-                .body("result", is("User authorized successfully."))
-                .body("token.size()", greaterThan(0));
-    }
-
-    @Test
-    void generateTokenWithAllureListenerTest() {
-        String data = "{ \"userName\": \"alex\"," +
-                " \"password\": \"asdsad#frew_DFS2\" }";
-
-//        RestAssured.filters(new AllureRestAssured()); подключаем Allure для всего проекта в @BeforeAll
-        given()
-                .filter(new AllureRestAssured())
-                .contentType(JSON)
-                .body(data)
-                .log().uri()
-                .log().body()
-                .when()
-                .post("/Account/v1/GenerateToken")
-                .then()
-                .log().status()
-                .log().body()
-                .statusCode(200)
-                .body("status", is("Success"))
-                .body("result", is("User authorized successfully."))
-                .body("token.size()", greaterThan(0));
-    }
-
-    @Test
-    void generateTokenWithCustomAllureListenerTest() {
-        String data = "{ \"userName\": \"alex\"," +
-                " \"password\": \"asdsad#frew_DFS2\" }";
-
-        given()
-                .filter(withCustomTemplates())
-                .contentType(JSON)
-                .body(data)
-                .log().uri()
-                .log().body()
-                .when()
-                .post("/Account/v1/GenerateToken")
+                .post(testData.generateTokenUrl)
                 .then()
                 .log().status()
                 .log().body()
@@ -120,4 +49,6 @@ public class BookstoreTests {
                 .body("result", is("User authorized successfully."))
                 .body("token.size()", greaterThan(0));
     }
+
+
 }
